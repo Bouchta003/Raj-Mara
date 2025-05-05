@@ -14,6 +14,12 @@ public class Player_Movement : MonoBehaviour
     public float dashDuration = 0.2f;
     public float dashCooldown = 0.5f;
 
+    [Header("Slashing")]
+    public float slashDamage = 15f;
+    public float slashDuration = 0.2f;
+    public float slashCooldown = 0.5f;
+    public BoxCollider2D hitBoxSlash;
+
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
@@ -31,6 +37,7 @@ public class Player_Movement : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponentInChildren<Animator>();
+        hitBoxSlash.gameObject.SetActive(false);
     }
 
     void Update()
@@ -63,6 +70,7 @@ public class Player_Movement : MonoBehaviour
         // Handle dashing
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
         {
+            anim.SetTrigger("Dash");
             StartDash();
         }
 
@@ -71,6 +79,16 @@ public class Player_Movement : MonoBehaviour
         {
             canDash = true;
         }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            //SlashAttack();
+        }
+    }
+
+    void DeactivateHitbox()
+    {
+        hitBoxSlash.gameObject.SetActive(false);
     }
 
     void StartDash()
