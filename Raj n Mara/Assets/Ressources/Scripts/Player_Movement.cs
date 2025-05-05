@@ -15,29 +15,30 @@ public class Player_Movement : MonoBehaviour
     public float dashCooldown = 0.5f;
 
     [Header("Slashing")]
-    public float slashDamage = 15f;
-    public float slashDuration = 0.2f;
+    public float slashDuration = 0.5f;
     public float slashCooldown = 0.5f;
-    public BoxCollider2D hitBoxSlash;
+    public GameObject slasher; // Hitbox or slash effect
+    public GameObject slashPrefabPreview;
 
+    [Header("Ground Check")]
     public Transform groundCheck;
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
 
     private Rigidbody2D rb;
+    private Animator anim;
     private bool isGrounded;
     private bool isDashing = false;
     private bool canDash = true;
-
-    private Animator anim;
+    private bool canSlash = true;
     private float dashTime;
     private float dashCooldownTime;
+    private float slashCooldownTime;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponentInChildren<Animator>();
-        hitBoxSlash.gameObject.SetActive(false);
     }
 
     void Update()
@@ -47,48 +48,53 @@ public class Player_Movement : MonoBehaviour
 
         if (!isDashing)
         {
-            // Handle horizontal movement
-            float moveInput = Input.GetAxis("Horizontal");
-            rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
-            anim.SetFloat("xVelocity", Mathf.Abs(rb.linearVelocity.x));
-
-            // Animation: Move or Idle
-            if (Mathf.Abs(moveInput) > 0.1f)
-            {
-                anim.SetTrigger("Move");
-                transform.localScale = new Vector3(moveInput > 0 ? 1 : -1, 1, 1); // Flip character
-            }
-
-            // Handle jumping
-            if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
-            {
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-                anim.SetTrigger("Jump");
-            }
+            HandleMovement();
+            HandleJumping();
         }
 
-        // Handle dashing
+        HandleDashing();
+        HandleSlashing();
+    }
+
+    void HandleMovement()
+    {
+        float moveInput = Input.GetAxis("Horizontal");
+        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+        anim.SetFloat("xVelocity", Mathf.Abs(rb.linearVelocity.x));
+
+        // Animation: Move or Idle
+        if (Mathf.Abs(moveInput) > 0.1f)
+        {
+            anim.SetTrigger("Move");
+            transform.localScale = new Vector3(moveInput > 0 ? 1 : -1, 1, 1); // Flip character
+        }
+    }
+
+    void HandleJumping()
+    {
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            anim.SetTrigger("Jump");
+        }
+    }
+
+    void HandleDashing()
+    {
         if (Input.GetKeyDown(KeyCode.LeftShift) && canDash)
         {
-            anim.SetTrigger("Dash");
             StartDash();
         }
 
-        // Cooldown timer
         if (!canDash && Time.time >= dashCooldownTime)
         {
             canDash = true;
         }
 
-        if (Input.GetMouseButtonDown(0))
+        if (isDashing && Time.time >= dashTime)
         {
-            //SlashAttack();
+            EndDash();
         }
-    }
-
-    void DeactivateHitbox()
-    {
-        hitBoxSlash.gameObject.SetActive(false);
     }
 
     void StartDash()
@@ -103,18 +109,53 @@ public class Player_Movement : MonoBehaviour
         anim.SetTrigger("Dash");
     }
 
-    void FixedUpdate()
-    {
-        if (isDashing && Time.time >= dashTime)
-        {
-            EndDash();
-        }
-    }
-
     void EndDash()
     {
         isDashing = false;
         rb.linearVelocity = new Vector2(0, rb.linearVelocity.y); // Stop horizontal dash velocity
+    }
+
+    void HandleSlashing()
+    {
+        if (Input.GetMouseButtonDown(0) && canSlash)
+        {
+            StartSlash();
+        }
+
+        if (!canSlash && Time.time >= slashCooldownTime)
+        {
+            canSlash = true;
+        }
+    }
+
+    void StartSlash()
+    {
+        canSlash = false;
+        slashCooldownTime = Time.time + slashCooldown;
+
+        // Activate the slasher hitbox or effect
+        if (slasher != null)
+        {
+            slasher.SetActive(true);
+            Invoke(nameof(EndSlash), slashDuration); // Deactivate after duration
+        }
+
+        // Instantiate a visual effect (if needed)
+        if (slashPrefabPreview != null)
+        {
+            GameObject slash = Instantiate(slashPrefabPreview, transform);
+            Destroy(slash, slashDuration); // Destroy after slash duration
+        }
+
+        anim.SetTrigger("Slash");
+    }
+
+    void EndSlash()
+    {
+        if (slasher != null)
+        {
+            slasher.SetActive(false);
+        }
     }
 
     void OnDrawGizmosSelected()
