@@ -8,7 +8,7 @@ public class Player_Movement : MonoBehaviour
 
     [Header("Jumping")]
     public float jumpForce = 10f;
-
+    public bool hasDoubleJumped = false;
     [Header("Dashing")]
     public float dashForce = 15f;
     public float dashDuration = 0.2f;
@@ -72,11 +72,13 @@ public class Player_Movement : MonoBehaviour
 
     void HandleJumping()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (Input.GetKeyDown(KeyCode.Space) && !hasDoubleJumped)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             anim.SetTrigger("Jump");
+            hasDoubleJumped = true;
         }
+        if (isGrounded) hasDoubleJumped = false;
     }
 
     void HandleDashing()
